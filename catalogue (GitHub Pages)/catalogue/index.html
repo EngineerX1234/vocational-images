@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Searchable catalogue of PSSCIVE vocational lab tools with photos, approximate INR prices, lab budgets and a BOQ builder. By EngineerX Academy.">
+<title>Vocational Lab Catalogue</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky toolbar + three working tabs (Catalogue / Lab Budget / BOQ Builder); workshop-ledger feel, ink-teal with saffron tags */
+:root{
+  --bg:#f5f7f6; --panel:#ffffff; --ink:#14302e; --muted:#5b6f6c; --line:#d9e2df;
+  --accent:#0f6b63; --accent-ink:#ffffff; --tag:#f3a712; --tag-ink:#3a2600; --soft:#e4efec; --warn:#b4471f;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1716; --panel:#152220; --ink:#e3eeeb; --muted:#9db3ae; --line:#2a3b38;
+  --accent:#4fc1b4; --accent-ink:#06201d; --tag:#f3b33d; --tag-ink:#2a1b00; --soft:#1c2e2b; --warn:#f08a62; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1716; --panel:#152220; --ink:#e3eeeb; --muted:#9db3ae; --line:#2a3b38;
+  --accent:#4fc1b4; --accent-ink:#06201d; --tag:#f3b33d; --tag-ink:#2a1b00; --soft:#1c2e2b; --warn:#f08a62; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 18px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4vw,38px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:8px 0 0;max-width:68ch}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.stat{background:var(--soft);border-radius:999px;padding:4px 12px;font-size:13px}
+.stat b{font-family:var(--f-mono);font-weight:500}
+nav.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-block:1px solid var(--line)}
+nav.bar .wrap{display:flex;gap:4px;flex-wrap:wrap;padding-block:8px}
+.tab{font:600 14px var(--f-body);background:none;border:0;color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--tag);outline-offset:2px}
+.badge{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--tag);color:var(--tag-ink);font:500 12px var(--f-mono);margin-left:6px}
+main{padding-block:18px 48px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+input[type=search],select,input[type=number]{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+input[type=search]{flex:1 1 240px}
+select{flex:0 1 230px;max-width:100%}
+.count{color:var(--muted);font-size:13px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.thumb{width:96px;height:96px;margin:2px auto 4px;background-color:#fff;border-radius:6px;background-repeat:no-repeat;background-size:960px 960px}
+.noimg{width:96px;height:96px;margin:2px auto 4px;border-radius:6px;background:var(--soft);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center}
+.card .nm{font-weight:600;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:13px}
+.price{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.chip{font-size:11px;border-radius:999px;padding:1px 8px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.chip.c{background:var(--tag);color:var(--tag-ink)}
+.card a{font-size:12px;color:var(--accent)}
+.more{display:block;margin:18px auto 0;font:600 14px var(--f-body);background:var(--panel);color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:9px 18px;cursor:pointer}
+.tablebox{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--soft);position:sticky;top:0;white-space:nowrap}
+th.s{cursor:pointer}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n input{width:76px;text-align:right}
+.btn{font:600 13px var(--f-body);border-radius:8px;padding:6px 12px;cursor:pointer;border:1px solid var(--accent);background:var(--panel);color:var(--accent);white-space:nowrap}
+.btn.on{background:var(--accent);color:var(--accent-ink)}
+.boq{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start}
+.picker{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:75vh;overflow:auto}
+.picker label{display:flex;gap:8px;align-items:flex-start;padding:5px 2px;font-size:14px;cursor:pointer;border-bottom:1px dashed var(--line)}
+.picker small{color:var(--muted)}
+.sechead{font:600 12px var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin:12px 0 2px}
+.total{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.total .big{font:800 24px var(--f-display);color:var(--accent)}
+.empty{color:var(--muted);padding:28px;text-align:center;border:1px dashed var(--line);border-radius:10px;background:var(--panel)}
+.note{color:var(--muted);font-size:12.5px;margin-top:14px;max-width:90ch}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px}
+@media (max-width:760px){.boq{grid-template-columns:1fr}.picker{max-height:50vh}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top"><div class="wrap">
+  <h1>Vocational Lab Catalogue</h1>
+  <p class="sub">Every tool, equipment and consumable in the PSSCIVE (NCERT) vocational curriculum, with photos, approximate Indian market prices and lab budgets for 164 job roles. Build a Bill of Quantities for any mix of job roles.</p>
+  <div class="stats" id="stats"><span class="stat">Loading catalogue…</span></div>
+</div></header>
+
+<nav class="bar" aria-label="Sections"><div class="wrap" role="tablist">
+  <button class="tab" role="tab" id="t-cat" aria-selected="true" data-t="cat">Catalogue</button>
+  <button class="tab" role="tab" id="t-bud" aria-selected="false" data-t="bud">Lab Budget</button>
+  <button class="tab" role="tab" id="t-boq" aria-selected="false" data-t="boq">BOQ Builder<span class="badge" id="selCount">0</span></button>
+</div></nav>
+
+<main class="wrap">
+  <section id="p-cat">
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search a tool, e.g. multimeter, oven, drone" aria-label="Search items">
+      <select id="fSec" aria-label="Sector"></select>
+      <select id="fRole" aria-label="Job role"></select>
+      <select id="fType" aria-label="Item type"><option value="">All item types</option><option>Tools &amp; Equipment</option><option>Other Lab Items</option><option>Consumables</option></select>
+    </div>
+    <p class="count" id="catCount"></p>
+    <div class="grid" id="grid"></div>
+    <button class="more" id="more" hidden>Show more</button>
+  </section>
+
+  <section id="p-bud" hidden>
+    <div class="filters">
+      <input type="search" id="bq" placeholder="Search job role or QP code" aria-label="Search job roles">
+      <select id="bSec" aria-label="Sector"></select>
+    </div>
+    <div class="tablebox"><table id="budTable"><thead><tr>
+      <th class="s" data-k="1">Job role</th><th class="s" data-k="0">Sector</th><th>Class</th><th>QP</th>
+      <th class="n s" data-k="t0">Tools &amp; Equip.</th><th class="n s" data-k="t1">Other items</th><th class="n s" data-k="t2">Consumables</th><th class="n s" data-k="tot">Total (INR)</th><th>BOQ</th>
+    </tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section id="p-boq" hidden>
+    <div class="boq">
+      <div class="picker" id="picker">
+        <input type="search" id="pq" placeholder="Find a job role" aria-label="Find a job role" style="width:100%">
+        <div id="plist"></div>
+      </div>
+      <div style="min-width:0">
+        <div class="total"><div><div style="font-size:13px;color:var(--muted)" id="boqInfo"></div><div class="big" id="boqTotal">₹0</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="copy">Copy for Excel</button><button class="btn" id="clear">Clear selection</button></div></div>
+        <div id="boqBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="note">Prices are approximate Indian market rates (October 2026, including GST) for budget planning only; get final quotations from vendors. Quantities follow the curriculum where given; items listed "per student" assume a batch of 20; otherwise one unit is assumed. Item lists are from the PSSCIVE curriculum documents. Prepared by Subodh Kumar, EngineerX Academy.</p>
+</main>
+
+<script>
+const inr=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const $=s=>document.querySelector(s);
+let DB,ROLE_TOT=[],SEL=new Set(),QTY={},shown=60,sortK='tot',sortDir=-1;
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function money(v){return '₹'+inr.format(v)}
+function lakh(v){return v>=100000?'₹'+(v/100000).toFixed(2)+' L':money(v)}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function thumb(it){const k=it[5];if(k<0)return '<div class="noimg">No photo</div>';
+  const s=Math.floor(k/100),p=k%100;return `<div class="thumb" role="img" aria-label="${esc(it[0])}" style="background-image:url(sprites/s${s}.jpg);background-position:-${(p%10)*96}px -${Math.floor(p/10)*96}px"></div>`}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
+
+fetch('data.json').then(r=>r.json()).then(d=>{DB=d;init()}).catch(()=>{$('#stats').innerHTML='<span class="stat">Could not load the catalogue data. Reload the page.</span>'});
+
+function init(){
+  const R=DB.roles,I=DB.items;
+  ROLE_TOT=DB.links.map(L=>{const t=[0,0,0];L.forEach(([i,q])=>{const it=I[i];t[['Tools & Equipment','Other Lab Items','Consumables'].indexOf(it[1])]+=q*it[3]});return t});
+  const sectors=[...new Set(R.map(r=>r[0]))];
+  const grand=ROLE_TOT.reduce((a,t)=>a+t[0]+t[1]+t[2],0);
+  $('#stats').innerHTML=`<span class="stat"><b>${sectors.length}</b> sectors</span><span class="stat"><b>${R.length}</b> job role labs</span><span class="stat"><b>${inr.format(I.length)}</b> items</span><span class="stat"><b>${inr.format(I.filter(i=>i[5]>=0).length)}</b> with photos</span>`;
+  const secOpts='<option value="">All sectors</option>'+sectors.map(s=>`<option>${esc(s)}</option>`).join('');
+  $('#fSec').innerHTML=secOpts;$('#bSec').innerHTML=secOpts;
+  fillRoles();
+  (store.get('boqSel')||[]).forEach(x=>SEL.add(x));QTY=store.get('boqQty')||{};
+  ['q','fType','fRole'].forEach(id=>$('#'+id).addEventListener('input',()=>{shown=60;renderCat()}));
+  $('#fSec').addEventListener('input',()=>{fillRoles();shown=60;renderCat()});
+  $('#more').onclick=()=>{shown+=60;renderCat()};
+  $('#bq').addEventListener('input',renderBud);$('#bSec').addEventListener('input',renderBud);
+  document.querySelectorAll('#budTable th.s').forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortDir=(sortK===k)?-sortDir:(k==='0'||k==='1'?1:-1);sortK=k;renderBud()});
+  $('#pq').addEventListener('input',renderPicker);
+  $('#copy').onclick=copyBoq;$('#clear').onclick=()=>{SEL.clear();QTY={};save();renderAll()};
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.t));
+  const h=location.hash.slice(1);if(['cat','bud','boq'].includes(h))show(h);
+  renderAll();
+}
+function fillRoles(){const s=$('#fSec').value;const cur=$('#fRole').value;
+  $('#fRole').innerHTML='<option value="">All job roles</option>'+DB.roles.map((r,i)=>[r,i]).filter(([r])=>!s||r[0]===s).map(([r,i])=>`<option value="${i}">${esc(r[1])} (${r[3]})</option>`).join('');
+  if([...$('#fRole').options].some(o=>o.value===cur))$('#fRole').value=cur}
+function show(t){document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+  ['cat','bud','boq'].forEach(x=>$('#p-'+x).hidden=x!==t);}
+function save(){store.set('boqSel',[...SEL]);store.set('boqQty',QTY)}
+function renderAll(){renderCat();renderBud();renderPicker();renderBoq()}
+
+function renderCat(){
+  const I=DB.items,q=$('#q').value.trim().toLowerCase(),s=$('#fSec').value,ro=$('#fRole').value,ty=$('#fType').value;
+  let allowed=null;
+  if(ro!==''){allowed=new Set(DB.links[+ro].map(x=>x[0]))}
+  else if(s){allowed=new Set();DB.roles.forEach((r,i)=>{if(r[0]===s)DB.links[i].forEach(x=>allowed.add(x[0]))})}
+  const used=new Array(I.length).fill(0);DB.links.forEach(L=>L.forEach(([i])=>used[i]++));
+  const list=I.map((it,i)=>[it,i]).filter(([it,i])=>(!allowed||allowed.has(i))&&(!ty||it[1]===ty)&&(!q||it[0].toLowerCase().includes(q)))
+    .sort((a,b)=>(b[0][5]>=0)-(a[0][5]>=0)||a[0][0].localeCompare(b[0][0]));
+  $('#catCount').textContent=`${inr.format(list.length)} items`+(list.length>shown?`, showing ${shown}`:'');
+  $('#grid').innerHTML=list.slice(0,shown).map(([it,i])=>`<div class="card">${thumb(it)}<div class="nm">${esc(it[0])}</div>
+    <div class="row"><span class="price">${it[3]===0?'Free':money(it[3])}</span><span class="chip">${esc(it[2])}</span></div>
+    <div class="row"><span class="chip ${it[1]==='Consumables'?'c':''}">${esc(it[1])}</span><span style="font-size:12px;color:var(--muted)">${used[i]} lab${used[i]>1?'s':''}</span></div>
+    ${it[4]?`<a href="${esc(it[4])}" target="_blank" rel="noopener">Open full photo</a>`:''}</div>`).join('')||'<div class="empty">No items match. Try a shorter search word or clear the filters.</div>';
+  $('#more').hidden=list.length<=shown;
+}
+
+function renderBud(){
+  const q=$('#bq').value.trim().toLowerCase(),s=$('#bSec').value;
+  let rows=DB.roles.map((r,i)=>({r,i,t:ROLE_TOT[i],tot:ROLE_TOT[i][0]+ROLE_TOT[i][1]+ROLE_TOT[i][2]}))
+    .filter(x=>(!s||x.r[0]===s)&&(!q||(x.r[1]+' '+x.r[2]).toLowerCase().includes(q)));
+  const key=x=>sortK==='tot'?x.tot:sortK[0]==='t'?x.t[+sortK[1]]:x.r[+sortK];
+  rows.sort((a,b)=>{const A=key(a),B=key(b);return (A>B?1:A<B?-1:0)*sortDir});
+  $('#budTable tbody').innerHTML=rows.map(x=>`<tr><td>${esc(x.r[1])}</td><td>${esc(x.r[0])}</td><td>${x.r[3]}</td><td style="white-space:nowrap">${esc(x.r[2])}</td>
+    <td class="n">${money(x.t[0])}</td><td class="n">${money(x.t[1])}</td><td class="n">${money(x.t[2])}</td><td class="n"><b>${lakh(x.tot)}</b></td>
+    <td><button class="btn ${SEL.has(x.i)?'on':''}" data-i="${x.i}">${SEL.has(x.i)?'Added':'Add'}</button></td></tr>`).join('');
+  document.querySelectorAll('#budTable tbody .btn').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;SEL.has(i)?SEL.delete(i):SEL.add(i);save();renderBud();renderPicker();renderBoq()});
+}
+
+function renderPicker(){
+  const q=$('#pq').value.trim().toLowerCase();let html='',last='';
+  DB.roles.forEach((r,i)=>{if(q&&!(r[1]+' '+r[2]+' '+r[0]).toLowerCase().includes(q))return;
+    if(r[0]!==last){html+=`<div class="sechead">${esc(r[0])}</div>`;last=r[0]}
+    const t=ROLE_TOT[i][0]+ROLE_TOT[i][1]+ROLE_TOT[i][2];
+    html+=`<label><input type="checkbox" id="pk${i}" data-i="${i}" ${SEL.has(i)?'checked':''}><span>${esc(r[1])} <small>· ${r[3]} · ${lakh(t)}</small></span></label>`});
+  $('#plist').innerHTML=html||'<p class="count">No job role matches.</p>';
+  document.querySelectorAll('#plist input').forEach(c=>c.onchange=()=>{const i=+c.dataset.i;c.checked?SEL.add(i):SEL.delete(i);save();renderBoq();renderBud()});
+  $('#selCount').textContent=SEL.size;
+}
+
+function boqRows(){const I=DB.items,agg={};
+  SEL.forEach(ri=>DB.links[ri].forEach(([i,q])=>{agg[i]=(agg[i]||0)+q}));
+  return Object.entries(agg).map(([i,q])=>{i=+i;const qq=QTY[i]!=null?QTY[i]:q;return {i,it:I[i],q:qq,amt:qq*I[i][3]}}).sort((a,b)=>a.it[1].localeCompare(b.it[1])||b.amt-a.amt)}
+function renderBoq(){
+  $('#selCount').textContent=SEL.size;
+  const rows=boqRows(),tot=rows.reduce((a,r)=>a+r.amt,0);
+  $('#boqTotal').textContent=lakh(tot);
+  $('#boqInfo').textContent=SEL.size?`${SEL.size} job role${SEL.size>1?'s':''} selected · ${rows.length} items · total`:'Select job roles on the left (or use Add in Lab Budget)';
+  if(!SEL.size){$('#boqBody').innerHTML='<div class="empty">Your Bill of Quantities appears here. Tick one or more job roles to combine their labs; shared items are counted once per role.</div>';return}
+  $('#boqBody').innerHTML='<div class="tablebox"><table><thead><tr><th>Item</th><th>Type</th><th>Unit</th><th class="n">Price</th><th class="n">Qty</th><th class="n">Amount</th></tr></thead><tbody>'+
+    rows.map(r=>`<tr><td>${esc(r.it[0])}${r.it[4]?` <a href="${esc(r.it[4])}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent)">photo</a>`:''}</td><td><span class="chip ${r.it[1]==='Consumables'?'c':''}">${esc(r.it[1])}</span></td><td>${esc(r.it[2])}</td>
+      <td class="n">${money(r.it[3])}</td><td class="n"><input type="number" min="0" step="1" id="q${r.i}" data-i="${r.i}" value="${r.q}" aria-label="Quantity"></td><td class="n">${money(r.amt)}</td></tr>`).join('')+'</tbody></table></div>';
+  document.querySelectorAll('#boqBody input').forEach(inp=>inp.onchange=()=>{const v=parseFloat(inp.value);QTY[inp.dataset.i]=isNaN(v)||v<0?0:v;save();renderBoq()});
+}
+function copyBoq(){const rows=boqRows();if(!rows.length){toast('Select at least one job role first');return}
+  const head='Item\tType\tUnit\tPrice (INR)\tQty\tAmount (INR)\tPhoto';
+  const txt=[head,...rows.map(r=>[r.it[0],r.it[1],r.it[2],r.it[3],r.q,Math.round(r.amt),r.it[4]].join('\t')),'\t\t\t\tTOTAL\t'+Math.round(rows.reduce((a,r)=>a+r.amt,0))].join('\n');
+  navigator.clipboard.writeText(txt).then(()=>toast('Copied. Paste into Excel.')).catch(()=>{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();toast('Press Ctrl+C to copy');setTimeout(()=>t.remove(),4000)})}
+</script>
+
+</body>
+</html>
