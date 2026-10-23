@@ -1,4 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 <title>Lab Quotation & BOQ Tool - Vocational Labs</title>
 <meta name="description" content="Free tool: upload your vocational lab tools list (Excel/CSV) and get approximate prices, photos, lab-wise totals and an Excel quotation. Runs in your browser.">
 <style>
@@ -33,17 +34,40 @@ input.q,input.pp{width:70px;text-align:right;font:inherit;padding:3px 5px;border
 details summary{cursor:pointer;font-weight:600}
 .x{padding:2px 8px;font-size:12px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
-</style></head><body><div class="wrap">
-<header><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Search tools by name, QP code or job role, build your list and download a ready Excel quotation with approximate prices and photos. Free · no login · nothing leaves your browser.</p></header>
 
-<section class="card"><h2>1. Find tools</h2>
-<div class="srch"><input id="q" type="search" placeholder="Type a tool name, QP code or job role — e.g. digital multimeter, AGR/Q0101, Solar Panel Installation" aria-label="Search tools, QP code or job role"><button class="primary" id="qgo">Search</button></div>
+/* refresh: ink header band, one tone per step, compact type */
+:root{--band:#0f2a3d;--band-ink:#e9f1f6;--band-mute:#9fb6c6;--t1:#4f46e5;--t2:#0e7c86;--t3:#c2410c;--tile:#f7f9fb;--shadow:0 1px 2px rgba(15,42,61,.06),0 4px 14px rgba(15,42,61,.05)}
+@media (prefers-color-scheme:dark){:root{--band:#0b1c28;--band-ink:#e4edf3;--band-mute:#8aa3b4;--t1:#8b85ff;--t2:#2bb3bd;--t3:#f08a4b;--tile:#1c2622;--shadow:none}}
+body{font:14px/1.5 "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px}
+.wrap{gap:14px}
+header.hero{background:var(--band);color:var(--band-ink);border-radius:12px;padding:20px}
+header.hero h1{font-family:Archivo,"Segoe UI",sans-serif;font-size:clamp(22px,3vw,28px)}header.hero h1 span{color:#ffb27a}
+header.hero .sub{color:var(--band-mute);font-size:13px;margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.chips span{font-size:12px;font-weight:600;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.card{--tone:var(--t1);border-radius:10px;padding:14px 16px;gap:10px;box-shadow:var(--shadow);border-top:3px solid var(--tone)}
+.card[data-tone="2"]{--tone:var(--t2)}.card[data-tone="3"]{--tone:var(--t3)}
+h2{font-size:15.5px;display:flex;align-items:center;gap:8px}
+h2 .n{background:var(--tone);color:#fff;border-radius:6px;padding:1px 7px;font-size:12px}
+button{font-size:13px;border-radius:8px;padding:7px 12px}
+button.primary{background:var(--tone);border-color:var(--tone)}
+.srch input{border-radius:10px;padding:11px 14px;background:var(--tile)}
+.role{background:var(--tile);border:1px solid var(--line);border-radius:10px}
+.role:hover{border-color:var(--tone)}
+.kpi{border-left-color:var(--tone);background:var(--tile);border-radius:0 8px 8px 0;padding:6px 12px}.kpi b{font-size:18px}
+.drop{background:var(--tile);border-radius:10px;padding:16px}
+.note{font-size:12.5px}table{font-size:13px}.disc{font-size:12px}
+details summary{font-size:13px;color:var(--tone)}
+</style></head><body><div class="wrap">
+<header class="hero"><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Build a vocational lab quotation in minutes: search, pick, download.</p><div class="chips"><span>3,500+ tools with photos</span><span>173 job roles / labs</span><span>Free · no login</span></div></header>
+
+<section class="card" data-tone="1"><h2><span class="n">1</span> Find tools</h2>
+<div class="srch"><input id="q" type="search" placeholder="Tool name, QP code or job role (e.g. multimeter, AGR/Q0101, solar)" aria-label="Search tools, QP code or job role"><button class="primary" id="qgo">Search</button></div>
 <p class="note" id="qmsg">Loading data…</p>
 <div class="roles" id="roleRes"></div>
 <div id="itemRes"></div>
 </section>
 
-<section class="card"><h2>2. Add a missing item manually</h2>
+<section class="card" data-tone="2"><h2><span class="n">2</span> Add a missing item</h2>
 <div class="man"><input id="m_item" placeholder="Item name *"><input id="m_qty" type="number" min="0" value="1" aria-label="Qty"><input id="m_unit" placeholder="Unit"><input id="m_price" type="number" min="0" placeholder="Unit price ₹"><input id="m_lab" placeholder="Lab / group (optional)"><button id="m_add">Add</button></div>
 <details><summary>Or add many at once (upload Excel / CSV or paste a list)</summary>
 <div style="display:grid;gap:10px;margin-top:10px">
@@ -53,7 +77,7 @@ details summary{cursor:pointer;font-weight:600}
 <div class="row"><button id="pasteAdd">Add pasted items</button><span class="note" id="bmsg"></span></div></div></details>
 </section>
 
-<section class="card"><h2>3. Your quotation list</h2>
+<section class="card" data-tone="3"><h2><span class="n">3</span> Your quotation</h2>
 <div class="kpis" id="kpi"></div>
 <div class="tbl" id="tbl"></div>
 <div class="row"><button class="primary" id="dl">Download quotation (Excel)</button><button id="clr">Clear list</button><span class="note">Change qty or price right in the table.</span></div>
