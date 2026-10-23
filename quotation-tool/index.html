@@ -114,12 +114,13 @@ $('#qgo').onclick=search; $('#q').addEventListener('keydown',e=>{if(e.key==='Ent
 const roleRows=i=>LIB.rows.filter(x=>x[0]===i).map(x=>({item:x[1],qty:typeof x[3]==='number'?x[3]:1,unit:x[4],price:x[5],photo:x[6]}));
 const roleLab=i=>{const r=LIB.roles[i];return `${r[1]} (${r[2]}, ${r[3]})`};
 $('#roleRes').addEventListener('click',e=>{ const s=e.target.dataset.show, a=e.target.dataset.addrole;
-  if(s!=null){ showItems(roleRows(+s),`Tools for ${roleLab(+s)} — untick what you don't need, change qty, then add:`,true,roleLab(+s)); $('#itemRes').scrollIntoView({behavior:'smooth',block:'start'}); }
-  if(a!=null){ roleRows(+a).forEach(r=>addItem({...r,lab:roleLab(+a)})); done(`Added ${roleRows(+a).length} items of ${roleLab(+a)}.`); } });
-$('#itemRes').addEventListener('click',e=>{ if(e.target.id==='selAll') document.querySelectorAll('.sel').forEach(c=>c.checked=e.target.checked);
+  if(s!=null){ window.__ROLES=$('#roleRes').innerHTML; $('#roleRes').innerHTML=''; showItems(roleRows(+s),`Tools for ${roleLab(+s)} — untick what you don't need, change qty, then add:`,true,roleLab(+s)); $('#itemRes').insertAdjacentHTML('afterbegin','<button id="back" style="margin-bottom:8px">← Back to search results</button>'); $('#itemRes').scrollIntoView({behavior:'smooth',block:'start'}); }
+  if(a!=null){ roleRows(+a).forEach(r=>addItem({...r,lab:roleLab(+a)})); done(`Added ${roleRows(+a).length} items of ${roleLab(+a)}.`,true); } });
+$('#itemRes').addEventListener('click',e=>{ if(e.target.id==='back'){ $('#roleRes').innerHTML=window.__ROLES||''; search(); return; } if(e.target.id==='selAll') document.querySelectorAll('.sel').forEach(c=>c.checked=e.target.checked);
   if(e.target.id==='addSel'){ let n=0; document.querySelectorAll('.sel:checked').forEach(c=>{ const i=+c.dataset.i, r=window.__RES[i]; const q=parseFloat(document.querySelector(`[data-q="${i}"]`).value); addItem({...r,qty:isNaN(q)?1:q,lab:window.__LAB||'General'}); n++; });
-    done(n?`Added ${n} item(s) to your quotation.`:'Tick at least one item.'); } });
-function done(msg){ saveCart(); render(); $('#qmsg').textContent=msg; }
+    if(!n){ $('#qmsg').textContent='Tick at least one item.'; return; } done(`Added ${n} item(s) to your quotation.`,true); } });
+function done(msg,clear){ saveCart(); render(); if(clear){ $('#roleRes').innerHTML=''; $('#itemRes').innerHTML=''; $('#q').value=''; }
+  $('#qmsg').textContent=msg+(clear?' Search again to add more, or scroll down to see your list.':''); if(clear) $('#q').focus({preventScroll:true}); }
 // ---- manual / bulk ----
 $('#m_add').onclick=()=>{ const it=$('#m_item').value.trim(); if(!it){$('#m_item').focus();return}
   const pr=$('#m_price').value; if(pr===''){ const m=match(it); addItem({item:it,qty:$('#m_qty').value,unit:$('#m_unit').value||(m?m.p[2]:''),price:m?m.p[3]:'',photo:m?m.p[4]:'',lab:$('#m_lab').value.trim()}); }
