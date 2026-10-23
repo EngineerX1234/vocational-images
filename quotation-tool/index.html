@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab Quotation & BOQ Tool - Vocational Labs</title>
+<meta name="description" content="Free tool: upload your vocational lab tools list (Excel/CSV) and get approximate prices, photos, lab-wise totals and an Excel quotation. Runs in your browser.">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#18231f;--muted:#5d6b65;--line:#d9dfd9;--accent:#0d5c4b;--stamp:#b5541c;--soft:#e8f0ec;--bad:#b42318;--good:#1f7a4d;--warn:#a15c00}
+@media (prefers-color-scheme:dark){:root{--bg:#111816;--panel:#18211e;--ink:#e4ece8;--muted:#9db0a7;--line:#2c3833;--accent:#4fb89b;--stamp:#e08a52;--soft:#1f2c27;--bad:#f07067;--good:#5fc28f;--warn:#e0a24a;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,"Segoe UI",Arial,sans-serif;padding:20px 16px 40px}
+.wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px}
+h1{margin:0;font-size:clamp(24px,4vw,34px)}h1 span{color:var(--stamp)}
+.sub{color:var(--muted);margin:4px 0 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:12px;min-width:0}
+h2{font-size:17px;margin:0}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:22px;text-align:center;color:var(--muted);cursor:pointer}.drop.over{border-color:var(--accent);background:var(--soft)}
+textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+button{font:600 14px system-ui,sans-serif;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.note{font-size:13px;color:var(--muted)}
+.tbl{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}th{background:var(--soft);text-align:left;position:sticky;top:0}th,td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}input.p{width:90px;text-align:right;font:inherit;padding:3px 5px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)}
+.chip{font-size:11.5px;padding:1px 7px;border-radius:10px;border:1px solid currentColor}.exact{color:var(--good)}.close{color:var(--warn)}.none{color:var(--bad)}
+.kpis{display:flex;flex-wrap:wrap;gap:10px}.kpi{border-left:3px solid var(--stamp);padding:4px 12px;min-width:140px}.kpi b{display:block;font-size:20px}.kpi span{font-size:12px;color:var(--muted)}
+img.th{width:44px;height:44px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.disc{font-size:13px;border-left:3px solid var(--bad);padding:6px 10px;background:var(--soft);border-radius:0 6px 6px 0}
+footer{text-align:center;font-size:12px;color:var(--muted)}a{color:var(--accent)}
+</style></head><body><div class="wrap">
+<header><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Upload a vocational lab tools &amp; equipment list and get approximate prices, photos and a ready Excel quotation. Free · no login · your file never leaves your browser.</p></header>
+<section class="card"><h2>1. Add your list</h2>
+<div class="drop" id="drop" tabindex="0" role="button"><b>Drop an Excel / CSV file here</b> or click to choose<br><span class="note">The file needs an item / description column and a quantity column.</span></div>
+<input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden>
+<label class="note" for="paste">…or paste items, one per line (optionally "item, qty")</label>
+<textarea id="paste" rows="4" placeholder="Electric drill machine, 2&#10;Vernier caliper, 5&#10;Digital multimeter, 10"></textarea>
+<div class="row"><button class="primary" id="go">Make quotation</button><span class="note" id="msg">Loading price list…</span></div></section>
+<section class="card" id="res" hidden><h2>2. Your quotation</h2><div class="kpis" id="kpi"></div>
+<div class="row"><button class="primary" id="dl">Download Excel</button><span class="note">Items without a price: type the unit price in the table.</span></div>
+<div class="tbl" id="tbl"></div>
+<p class="disc"><b>Disclaimer:</b> Prices are approximate Indian market rates (incl. GST) for budget planning only, not a vendor quotation. Please cross-check with suppliers before any final decision.</p></section>
+<footer>Data: PSSCIVE (NCERT) vocational lab lists · <a href="https://engineerx1234.github.io/vocational-images/catalogue/">Online lab catalogue</a> · <a href="https://www.engineerxacademy.in">engineerxacademy.in</a><br>Developed by Subodh Kumar</footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const inr=n=>n===''||n==null||isNaN(n)?'':'₹'+Math.round(n).toLocaleString('en-IN');
+let PRICES=null, ROWS=[];
+fetch('prices.json').then(r=>r.json()).then(d=>{PRICES=d.items;$('#msg').textContent=PRICES.length.toLocaleString('en-IN')+' items in our price list. Ready.'}).catch(()=>$('#msg').textContent='Could not load the price list. Reload the page.');
+const norm=s=>String(s).toLowerCase().replace(/\(.*?\)/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\b(\d+(\.\d+)?\s*(mm|cm|inch|in|ml|l|ltr|kg|g|gm|w|v|kw|hp|ft|m)?)\b/g,' ').replace(/\s+/g,' ').trim();
+const GENERIC=new Set(['machine','stand','meter','board','set','kit','table','box','tool','tools','unit','system','equipment','drum','rack','feed','scale','paper','bag','bottle','cover','holder','pipe','sheet','stick','wire']);
+let IDX=null; function buildIdx(){ if(IDX||!PRICES) return; const exact=new Map(), flat=new Map();
+  const list=PRICES.map(p=>{const n=norm(p[0]);const t=new Set(n.split(' ').filter(w=>w.length>2));if(!exact.has(n))exact.set(n,p);const f=n.replace(/ /g,'');if(!flat.has(f))flat.set(f,p);return {p,t}}); IDX={exact,flat,list}; }
+function match(name){ buildIdx(); if(!IDX) return null; const n=norm(name); if(!n) return null;
+  if(IDX.exact.has(n)) return {p:IDX.exact.get(n),how:'exact'}; if(IDX.flat.has(n.replace(/ /g,''))) return {p:IDX.flat.get(n.replace(/ /g,'')),how:'exact'};
+  const words=n.split(' ').filter(w=>w.length>2), t=new Set(words); if(!t.size) return null; const head=words[words.length-1]; let best=null,bs=0;
+  for(const x of IDX.list){ if(!x.t.size) continue; let inter=0; for(const w of t) if(x.t.has(w)) inter++; if(!inter) continue;
+    const jac=inter/(t.size+x.t.size-inter), mn=Math.min(t.size,x.t.size);
+    let sc=jac; if(inter===mn&&mn>=2) sc=Math.max(sc,0.75+jac/10); if(x.t.size===1&&x.t.has(head)&&!/ /.test(norm(x.p[0]))&&!GENERIC.has(head)) sc=Math.max(sc,0.62+jac/10);
+    if(/chart|poster|model|picture/.test(n)!==/chart|poster|model|picture/.test(norm(x.p[0]))) sc-=0.3;
+    if(sc>bs){bs=sc;best=x.p} }
+  return bs>=0.6?{p:best,how:'close'}:null; }
+
+
+function detectCols(rows){
+  for(let h=0;h<Math.min(rows.length,40);h++){ const r=rows[h].map(c=>c.toLowerCase());
+    const item=r.findIndex(c=>/^(item|items|description|item description|name of (the )?(item|equipment|tools?)|particulars?|equipment|tools? (and|&) equipment|tools?\/equipment|name)\b/.test(c)||/(item|equipment|tool).{0,20}(name|description)/.test(c));
+    const qty=r.findIndex((c,j)=>j!==item&&/(^|\b)(qty|quantity|nos\.?|no\. of units|per lab)/.test(c));
+    if(item<0||qty<0) continue;
+    const pick=re=>{const j=r.findIndex((c,k)=>k!==item&&k!==qty&&re.test(c)); return j<0?null:j};
+    return {header_row:h+1,item_col:item,qty_col:qty,spec_col:pick(/spec/),unit_col:pick(/^(unit|uom|units)\b/),group_col:pick(/job ?role|trade|lab|sector|course/)}; }
+  return null; }
+let SHEETROWS=null;
+const drop=$('#drop'),fi=$('#fi');drop.onclick=()=>fi.click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');load(e.dataTransfer.files[0])};
+fi.onchange=()=>{load(fi.files[0]);fi.value=''};
+async function load(f){ if(!f) return; const wb=XLSX.read(await f.arrayBuffer()); SHEETROWS=[]; for(const sn of wb.SheetNames){ const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}).map(r=>r.map(c=>String(c).trim()));
+  const m=detectCols(rows); if(!m) continue; let grp=sn; for(const r of rows.slice(m.header_row)){ const it=r[m.item_col]; if(!it) continue; const q=parseFloat(String(r[m.qty_col]).replace(/,/g,''));
+    if(m.group_col!=null&&r[m.group_col]) grp=r[m.group_col]; if(isNaN(q)&&!/[a-z]{3}/i.test(it)) continue; SHEETROWS.push({lab:grp,item:it,qty:isNaN(q)?1:q}); } }
+  $('#msg').textContent=SHEETROWS.length?`${f.name}: ${SHEETROWS.length} item(s) found. Press "Make quotation".`:`${f.name}: could not find item and quantity columns.`; }
+$('#go').onclick=()=>{ if(!PRICES) return; const pasted=$('#paste').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(.*?)[,\t]\s*(\d+(?:\.\d+)?)\s*$/);return m?{lab:'List',item:m[1],qty:+m[2]}:{lab:'List',item:l,qty:1}});
+  const src=[...(SHEETROWS||[]),...pasted]; if(!src.length){$('#msg').textContent='Add a file or paste items first.';return}
+  ROWS=src.map(r=>{const m=match(r.item);return {...r,how:m?m.how:'none',master:m?m.p[0]:'',unit:m?m.p[2]:'',price:m?m.p[3]:'',photo:m?m.p[4]:''}}); render(); $('#res').hidden=false; $('#res').scrollIntoView({behavior:'smooth'}); };
+function render(){ const tot=ROWS.reduce((a,r)=>a+(r.price===''?0:r.qty*r.price),0), un=ROWS.filter(r=>r.price==='').length;
+  $('#kpi').innerHTML=[['Items',ROWS.length],['Matched',ROWS.length-un],['Without price',un],['Total (approx.)',inr(tot)]].map(([a,b])=>`<div class="kpi"><b id="${a==='Total (approx.)'?'tot':''}">${b}</b><span>${a}</span></div>`).join('');
+  $('#tbl').innerHTML=`<table><thead><tr><th>#</th><th>Photo</th><th>Lab</th><th>Item</th><th>Qty</th><th>Match</th><th>Matched to</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>${ROWS.map((r,i)=>`<tr><td>${i+1}</td><td>${r.photo?`<a href="${esc(r.photo)}" target="_blank" rel="noopener"><img class="th" loading="lazy" src="${esc(r.photo)}" alt=""></a>`:''}</td><td>${esc(r.lab)}</td><td>${esc(r.item)}</td><td class="num">${r.qty}</td><td><span class="chip ${r.how}">${r.how==='none'?'not found':r.how}</span></td><td>${esc(r.master)}</td><td class="num"><input class="p" type="number" min="0" data-i="${i}" value="${r.price}" placeholder="₹"></td><td class="num" id="a${i}">${inr(r.price===''?'':r.qty*r.price)}</td></tr>`).join('')}</tbody></table>`; }
+$('#tbl').addEventListener('input',e=>{const i=e.target.dataset.i;if(i==null)return;const v=e.target.value;ROWS[i].price=v===''?'':+v;$('#a'+i).textContent=inr(v===''?'':ROWS[i].qty*+v);
+  const tot=ROWS.reduce((a,r)=>a+(r.price===''?0:r.qty*r.price),0);$('#tot').textContent=inr(tot)});
+$('#dl').onclick=()=>{ const head=[['Lab Quotation (approx. market rates incl. GST) - generated '+new Date().toLocaleDateString('en-IN')],[],['S.No','Lab / group','Item','Qty','Matched to (our list)','Unit','Unit price (Rs)','Amount (Rs)','Photo link']];
+  const body=ROWS.map((r,i)=>[i+1,r.lab,r.item,r.qty,r.master,r.unit,r.price,r.price===''?'':Math.round(r.qty*r.price),r.photo]);
+  const n=body.length; const ws=XLSX.utils.aoa_to_sheet([...head,...body,[],['','','','','','','Total',{f:`SUM(H4:H${3+n})`}],[],['Disclaimer: Approximate Indian market rates for budget planning only, not a vendor quotation. Please cross-check before any final decision.']]);
+  for(let i=0;i<n;i++){ const c=ws['H'+(4+i)]; if(c) ws['H'+(4+i)]={t:'n',f:`IF(G${4+i}="","",D${4+i}*G${4+i})`}; }
+  ws['!cols']=[{wch:6},{wch:22},{wch:40},{wch:6},{wch:36},{wch:8},{wch:14},{wch:14},{wch:50}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Quotation');XLSX.writeFile(wb,'Lab quotation.xlsx'); };
+</script></body></html>
