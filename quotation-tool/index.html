@@ -23,26 +23,54 @@ td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}inp
 img.th{width:44px;height:44px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
 .disc{font-size:13px;border-left:3px solid var(--bad);padding:6px 10px;background:var(--soft);border-radius:0 6px 6px 0}
 footer{text-align:center;font-size:12px;color:var(--muted)}a{color:var(--accent)}
+
+.srch{display:flex;gap:8px;flex-wrap:wrap}.srch input{flex:1;min-width:220px;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.roles{display:grid;gap:6px}.role{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 10px;background:var(--soft);border-radius:6px;font-size:14px}.role b{flex:1;min-width:200px}
+.role button{padding:5px 10px;font-size:13px}
+input.q,input.pp{width:70px;text-align:right;font:inherit;padding:3px 5px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)}input.pp{width:90px}
+.man{display:grid;grid-template-columns:2fr 70px 90px 110px 1fr auto;gap:8px}@media(max-width:700px){.man{grid-template-columns:1fr 1fr}}
+.man input{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);min-width:0}
+details summary{cursor:pointer;font-weight:600}
+.x{padding:2px 8px;font-size:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
 </style></head><body><div class="wrap">
-<header><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Upload a vocational lab tools &amp; equipment list and get approximate prices, photos and a ready Excel quotation. Free · no login · your file never leaves your browser.</p></header>
-<section class="card"><h2>1. Add your list</h2>
-<div class="drop" id="drop" tabindex="0" role="button"><b>Drop an Excel / CSV file here</b> or click to choose<br><span class="note">The file needs an item / description column and a quantity column.</span></div>
+<header><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Search tools by name, QP code or job role, build your list and download a ready Excel quotation with approximate prices and photos. Free · no login · nothing leaves your browser.</p></header>
+
+<section class="card"><h2>1. Find tools</h2>
+<div class="srch"><input id="q" type="search" placeholder="Type a tool name, QP code or job role — e.g. digital multimeter, AGR/Q0101, Solar Panel Installation" aria-label="Search tools, QP code or job role"><button class="primary" id="qgo">Search</button></div>
+<p class="note" id="qmsg">Loading data…</p>
+<div class="roles" id="roleRes"></div>
+<div id="itemRes"></div>
+</section>
+
+<section class="card"><h2>2. Add a missing item manually</h2>
+<div class="man"><input id="m_item" placeholder="Item name *"><input id="m_qty" type="number" min="0" value="1" aria-label="Qty"><input id="m_unit" placeholder="Unit"><input id="m_price" type="number" min="0" placeholder="Unit price ₹"><input id="m_lab" placeholder="Lab / group (optional)"><button id="m_add">Add</button></div>
+<details><summary>Or add many at once (upload Excel / CSV or paste a list)</summary>
+<div style="display:grid;gap:10px;margin-top:10px">
+<div class="drop" id="drop" tabindex="0" role="button"><b>Drop an Excel / CSV file here</b> or click to choose<br><span class="note">Needs an item / description column and a quantity column.</span></div>
 <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden>
-<label class="note" for="paste">…or paste items, one per line (optionally "item, qty")</label>
-<textarea id="paste" rows="4" placeholder="Electric drill machine, 2&#10;Vernier caliper, 5&#10;Digital multimeter, 10"></textarea>
-<div class="row"><button class="primary" id="go">Make quotation</button><span class="note" id="msg">Loading price list…</span></div></section>
-<section class="card" id="res" hidden><h2>2. Your quotation</h2><div class="kpis" id="kpi"></div>
-<div class="row"><button class="primary" id="dl">Download Excel</button><span class="note">Items without a price: type the unit price in the table.</span></div>
+<textarea id="paste" rows="4" placeholder="One item per line, optionally with qty:&#10;Electric drill machine, 2&#10;Vernier caliper, 5"></textarea>
+<div class="row"><button id="pasteAdd">Add pasted items</button><span class="note" id="bmsg"></span></div></div></details>
+</section>
+
+<section class="card"><h2>3. Your quotation list</h2>
+<div class="kpis" id="kpi"></div>
 <div class="tbl" id="tbl"></div>
-<p class="disc"><b>Disclaimer:</b> Prices are approximate Indian market rates (incl. GST) for budget planning only, not a vendor quotation. Please cross-check with suppliers before any final decision.</p></section>
+<div class="row"><button class="primary" id="dl">Download quotation (Excel)</button><button id="clr">Clear list</button><span class="note">Change qty or price right in the table.</span></div>
+<p class="disc"><b>Disclaimer:</b> Prices are approximate Indian market rates (incl. GST) for budget planning only, not a vendor quotation. Please cross-check with suppliers before any final decision.</p>
+</section>
 <footer>Data: PSSCIVE (NCERT) vocational lab lists · <a href="https://engineerx1234.github.io/vocational-images/catalogue/">Online lab catalogue</a> · <a href="https://www.engineerxacademy.in">engineerxacademy.in</a><br>Developed by Subodh Kumar</footer>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const inr=n=>n===''||n==null||isNaN(n)?'':'₹'+Math.round(n).toLocaleString('en-IN');
-let PRICES=null, ROWS=[];
-fetch('prices.json').then(r=>r.json()).then(d=>{PRICES=d.items;$('#msg').textContent=PRICES.length.toLocaleString('en-IN')+' items in our price list. Ready.'}).catch(()=>$('#msg').textContent='Could not load the price list. Reload the page.');
+const CDN='https://cdn.jsdelivr.net/gh/EngineerX1234/vocational-images@main/';
+let PRICES=null, LIB=null, CART=[], ITEMS=[];
+try{CART=JSON.parse(localStorage.getItem('lq_cart')||'[]')}catch(e){}
+const saveCart=()=>{try{localStorage.setItem('lq_cart',JSON.stringify(CART))}catch(e){}};
+Promise.all([fetch('prices.json').then(r=>r.json()),fetch('library.json').then(r=>r.json())]).then(([p,l])=>{PRICES=p.items;LIB=l;ITEMS=PRICES;
+  $('#qmsg').textContent=`${PRICES.length.toLocaleString('en-IN')} tools & items · ${LIB.roles.length} job roles / labs. Type above and press Search.`; render();}).catch(()=>$('#qmsg').textContent='Could not load data. Reload the page.');
 const norm=s=>String(s).toLowerCase().replace(/\(.*?\)/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\b(\d+(\.\d+)?\s*(mm|cm|inch|in|ml|l|ltr|kg|g|gm|w|v|kw|hp|ft|m)?)\b/g,' ').replace(/\s+/g,' ').trim();
 const GENERIC=new Set(['machine','stand','meter','board','set','kit','table','box','tool','tools','unit','system','equipment','drum','rack','feed','scale','paper','bag','bottle','cover','holder','pipe','sheet','stick','wire']);
 let IDX=null; function buildIdx(){ if(IDX||!PRICES) return; const exact=new Map(), flat=new Map();
@@ -66,26 +94,65 @@ function detectCols(rows){
     const pick=re=>{const j=r.findIndex((c,k)=>k!==item&&k!==qty&&re.test(c)); return j<0?null:j};
     return {header_row:h+1,item_col:item,qty_col:qty,spec_col:pick(/spec/),unit_col:pick(/^(unit|uom|units)\b/),group_col:pick(/job ?role|trade|lab|sector|course/)}; }
   return null; }
-let SHEETROWS=null;
+const nq=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const photo=v=>!v?'':v[0]==='~'?CDN+v.slice(1):v;
+function addItem(o){ const k=(o.lab||'')+'|'+o.item.toLowerCase(); const ex=CART.find(c=>(c.lab||'')+'|'+c.item.toLowerCase()===k);
+  if(ex){ ex.qty=+ex.qty+(+o.qty||1); } else CART.push({lab:o.lab||'General',item:o.item,qty:+o.qty||1,unit:o.unit||'',price:o.price===''||o.price==null?'':+o.price,photo:o.photo||''}); }
+function addMatched(item,qty,lab){ const m=match(item); addItem({lab,item,qty,unit:m?m.p[2]:'',price:m?m.p[3]:'',photo:m?m.p[4]:''}); }
+// ---- search ----
+function search(){ const raw=$('#q').value.trim(); if(!raw||!LIB) return; const q=raw.toLowerCase(), qn=nq(raw), words=q.split(/\s+/).filter(Boolean);
+  const roles=LIB.roles.map((r,i)=>({r,i,n:LIB.rows.filter(x=>x[0]===i).length})).filter(({r})=>nq(r[2]).includes(qn)&&qn.length>=4||words.every(w=>(r[1]+' '+r[0]).toLowerCase().includes(w))).slice(0,30);
+  $('#roleRes').innerHTML=roles.length?`<div class="note">Job roles / labs (${roles.length}):</div>`+roles.map(({r,i,n})=>`<div class="role"><b>${esc(r[1])} <span class="note">· ${esc(r[2])} · Class ${esc(r[3])} · ${esc(r[0])} · ${n} items</span></b><button data-show="${i}">Show tools</button><button class="primary" data-addrole="${i}">Add all ${n}</button></div>`).join(''):'';
+  const items=ITEMS.filter(p=>words.every(w=>p[0].toLowerCase().includes(w))).slice(0,80);
+  showItems(items.map(p=>({item:p[0],unit:p[2],price:p[3],photo:p[4],qty:1,lab:''})),items.length?`Matching tools & items (${items.length}${items.length===80?'+':''}):`:(roles.length?'':'Nothing found. Try a shorter word, or add it manually in step 2.'),false);
+  $('#qmsg').textContent=`Results for "${raw}"`; }
+function showItems(list,title,checked,lab){ window.__RES=list;
+  $('#itemRes').innerHTML=!list.length?`<p class="note">${esc(title)}</p>`:`<p class="note">${esc(title)}</p><div class="tbl" style="max-height:420px"><table><thead><tr><th><input type="checkbox" id="selAll" ${checked?'checked':''} aria-label="Select all"></th><th>Photo</th><th>Item</th><th>Qty</th><th>Unit</th><th>Approx. price</th></tr></thead><tbody>${list.map((r,i)=>`<tr><td><input type="checkbox" class="sel" data-i="${i}" ${checked?'checked':''} aria-label="Select ${esc(r.item)}"></td><td>${r.photo?`<img class="th" loading="lazy" src="${esc(photo(r.photo))}" alt="">`:''}</td><td>${esc(r.item)}</td><td><input class="q" type="number" min="0" step="any" data-q="${i}" value="${r.qty}"></td><td>${esc(r.unit)}</td><td class="num">${inr(r.price)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="row" style="margin-top:8px"><button class="primary" id="addSel">Add selected to quotation</button>${lab?`<span class="note">Will be grouped under: ${esc(lab)}</span>`:''}</div>`;
+  window.__LAB=lab||''; }
+$('#qgo').onclick=search; $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+const roleRows=i=>LIB.rows.filter(x=>x[0]===i).map(x=>({item:x[1],qty:typeof x[3]==='number'?x[3]:1,unit:x[4],price:x[5],photo:x[6]}));
+const roleLab=i=>{const r=LIB.roles[i];return `${r[1]} (${r[2]}, ${r[3]})`};
+$('#roleRes').addEventListener('click',e=>{ const s=e.target.dataset.show, a=e.target.dataset.addrole;
+  if(s!=null){ showItems(roleRows(+s),`Tools for ${roleLab(+s)} — untick what you don't need, change qty, then add:`,true,roleLab(+s)); $('#itemRes').scrollIntoView({behavior:'smooth',block:'start'}); }
+  if(a!=null){ roleRows(+a).forEach(r=>addItem({...r,lab:roleLab(+a)})); done(`Added ${roleRows(+a).length} items of ${roleLab(+a)}.`); } });
+$('#itemRes').addEventListener('click',e=>{ if(e.target.id==='selAll') document.querySelectorAll('.sel').forEach(c=>c.checked=e.target.checked);
+  if(e.target.id==='addSel'){ let n=0; document.querySelectorAll('.sel:checked').forEach(c=>{ const i=+c.dataset.i, r=window.__RES[i]; const q=parseFloat(document.querySelector(`[data-q="${i}"]`).value); addItem({...r,qty:isNaN(q)?1:q,lab:window.__LAB||'General'}); n++; });
+    done(n?`Added ${n} item(s) to your quotation.`:'Tick at least one item.'); } });
+function done(msg){ saveCart(); render(); $('#qmsg').textContent=msg; }
+// ---- manual / bulk ----
+$('#m_add').onclick=()=>{ const it=$('#m_item').value.trim(); if(!it){$('#m_item').focus();return}
+  const pr=$('#m_price').value; if(pr===''){ const m=match(it); addItem({item:it,qty:$('#m_qty').value,unit:$('#m_unit').value||(m?m.p[2]:''),price:m?m.p[3]:'',photo:m?m.p[4]:'',lab:$('#m_lab').value.trim()}); }
+  else addItem({item:it,qty:$('#m_qty').value,unit:$('#m_unit').value,price:pr,lab:$('#m_lab').value.trim()});
+  ['m_item','m_unit','m_price'].forEach(k=>$('#'+k).value=''); $('#m_qty').value=1; done(`Added "${it}".`); };
+let SHEETROWS=[];
 const drop=$('#drop'),fi=$('#fi');drop.onclick=()=>fi.click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
 drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');load(e.dataTransfer.files[0])};
 fi.onchange=()=>{load(fi.files[0]);fi.value=''};
-async function load(f){ if(!f) return; const wb=XLSX.read(await f.arrayBuffer()); SHEETROWS=[]; for(const sn of wb.SheetNames){ const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}).map(r=>r.map(c=>String(c).trim()));
+async function load(f){ if(!f||!PRICES) return; const wb=XLSX.read(await f.arrayBuffer()); let n=0; for(const sn of wb.SheetNames){ const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}).map(r=>r.map(c=>String(c).trim()));
   const m=detectCols(rows); if(!m) continue; let grp=sn; for(const r of rows.slice(m.header_row)){ const it=r[m.item_col]; if(!it) continue; const q=parseFloat(String(r[m.qty_col]).replace(/,/g,''));
-    if(m.group_col!=null&&r[m.group_col]) grp=r[m.group_col]; if(isNaN(q)&&!/[a-z]{3}/i.test(it)) continue; SHEETROWS.push({lab:grp,item:it,qty:isNaN(q)?1:q}); } }
-  $('#msg').textContent=SHEETROWS.length?`${f.name}: ${SHEETROWS.length} item(s) found. Press "Make quotation".`:`${f.name}: could not find item and quantity columns.`; }
-$('#go').onclick=()=>{ if(!PRICES) return; const pasted=$('#paste').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(.*?)[,\t]\s*(\d+(?:\.\d+)?)\s*$/);return m?{lab:'List',item:m[1],qty:+m[2]}:{lab:'List',item:l,qty:1}});
-  const src=[...(SHEETROWS||[]),...pasted]; if(!src.length){$('#msg').textContent='Add a file or paste items first.';return}
-  ROWS=src.map(r=>{const m=match(r.item);return {...r,how:m?m.how:'none',master:m?m.p[0]:'',unit:m?m.p[2]:'',price:m?m.p[3]:'',photo:m?m.p[4]:''}}); render(); $('#res').hidden=false; $('#res').scrollIntoView({behavior:'smooth'}); };
-function render(){ const tot=ROWS.reduce((a,r)=>a+(r.price===''?0:r.qty*r.price),0), un=ROWS.filter(r=>r.price==='').length;
-  $('#kpi').innerHTML=[['Items',ROWS.length],['Matched',ROWS.length-un],['Without price',un],['Total (approx.)',inr(tot)]].map(([a,b])=>`<div class="kpi"><b id="${a==='Total (approx.)'?'tot':''}">${b}</b><span>${a}</span></div>`).join('');
-  $('#tbl').innerHTML=`<table><thead><tr><th>#</th><th>Photo</th><th>Lab</th><th>Item</th><th>Qty</th><th>Match</th><th>Matched to</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>${ROWS.map((r,i)=>`<tr><td>${i+1}</td><td>${r.photo?`<a href="${esc(r.photo)}" target="_blank" rel="noopener"><img class="th" loading="lazy" src="${esc(r.photo)}" alt=""></a>`:''}</td><td>${esc(r.lab)}</td><td>${esc(r.item)}</td><td class="num">${r.qty}</td><td><span class="chip ${r.how}">${r.how==='none'?'not found':r.how}</span></td><td>${esc(r.master)}</td><td class="num"><input class="p" type="number" min="0" data-i="${i}" value="${r.price}" placeholder="₹"></td><td class="num" id="a${i}">${inr(r.price===''?'':r.qty*r.price)}</td></tr>`).join('')}</tbody></table>`; }
-$('#tbl').addEventListener('input',e=>{const i=e.target.dataset.i;if(i==null)return;const v=e.target.value;ROWS[i].price=v===''?'':+v;$('#a'+i).textContent=inr(v===''?'':ROWS[i].qty*+v);
-  const tot=ROWS.reduce((a,r)=>a+(r.price===''?0:r.qty*r.price),0);$('#tot').textContent=inr(tot)});
-$('#dl').onclick=()=>{ const head=[['Lab Quotation (approx. market rates incl. GST) - generated '+new Date().toLocaleDateString('en-IN')],[],['S.No','Lab / group','Item','Qty','Matched to (our list)','Unit','Unit price (Rs)','Amount (Rs)','Photo link']];
-  const body=ROWS.map((r,i)=>[i+1,r.lab,r.item,r.qty,r.master,r.unit,r.price,r.price===''?'':Math.round(r.qty*r.price),r.photo]);
-  const n=body.length; const ws=XLSX.utils.aoa_to_sheet([...head,...body,[],['','','','','','','Total',{f:`SUM(H4:H${3+n})`}],[],['Disclaimer: Approximate Indian market rates for budget planning only, not a vendor quotation. Please cross-check before any final decision.']]);
-  for(let i=0;i<n;i++){ const c=ws['H'+(4+i)]; if(c) ws['H'+(4+i)]={t:'n',f:`IF(G${4+i}="","",D${4+i}*G${4+i})`}; }
-  ws['!cols']=[{wch:6},{wch:22},{wch:40},{wch:6},{wch:36},{wch:8},{wch:14},{wch:14},{wch:50}];
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Quotation');XLSX.writeFile(wb,'Lab quotation.xlsx'); };
+    if(m.group_col!=null&&r[m.group_col]) grp=r[m.group_col]; if(isNaN(q)) continue; addMatched(it,q,grp); n++; } }
+  $('#bmsg').textContent=n?`${f.name}: ${n} item(s) added.`:`${f.name}: could not find item and quantity columns.`; done(n?`Added ${n} item(s) from ${f.name}.`:$('#qmsg').textContent); }
+$('#pasteAdd').onclick=()=>{ if(!PRICES) return; const ls=$('#paste').value.split('\n').map(l=>l.trim()).filter(Boolean); ls.forEach(l=>{const m=l.match(/^(.*?)[,\t]\s*(\d+(?:\.\d+)?)\s*$/); addMatched(m?m[1]:l,m?+m[2]:1,'List')});
+  $('#paste').value=''; $('#bmsg').textContent=`${ls.length} item(s) added.`; done(`Added ${ls.length} pasted item(s).`); };
+// ---- quotation list ----
+function render(){ const tot=CART.reduce((a,r)=>a+(r.price===''?0:r.qty*r.price),0), un=CART.filter(r=>r.price==='').length, labs=new Set(CART.map(r=>r.lab)).size;
+  $('#kpi').innerHTML=[['Items',CART.length],['Labs / groups',labs],['Without price',un],['Total (approx.)',inr(tot)||'₹0']].map(([a,b])=>`<div class="kpi"><b ${a.startsWith('Total')?'id="tot"':''}>${b}</b><span>${a}</span></div>`).join('');
+  $('#tbl').innerHTML=!CART.length?'<div class="note" style="padding:12px">Your list is empty. Search above and add tools, or add items manually.</div>':`<table><thead><tr><th>#</th><th>Photo</th><th>Lab / group</th><th>Item</th><th>Qty</th><th>Unit</th><th>Unit price</th><th>Amount</th><th></th></tr></thead><tbody>${CART.map((r,i)=>`<tr><td>${i+1}</td><td>${r.photo?`<a href="${esc(photo(r.photo))}" target="_blank" rel="noopener"><img class="th" loading="lazy" src="${esc(photo(r.photo))}" alt=""></a>`:''}</td><td>${esc(r.lab)}</td><td>${esc(r.item)}${r.price===''?' <span class="chip none">no price</span>':''}</td><td><input class="q" type="number" min="0" step="any" data-cq="${i}" value="${r.qty}"></td><td>${esc(r.unit)}</td><td><input class="pp" type="number" min="0" data-cp="${i}" value="${r.price}" placeholder="₹"></td><td class="num" id="a${i}">${inr(r.price===''?'':r.qty*r.price)}</td><td><button class="x" data-rm="${i}" aria-label="Remove ${esc(r.item)}">Remove</button></td></tr>`).join('')}</tbody></table>`; }
+$('#tbl').addEventListener('input',e=>{ const q=e.target.dataset.cq, p=e.target.dataset.cp; const i=q??p; if(i==null) return; const v=e.target.value;
+  if(q!=null) CART[i].qty=v===''?0:+v; else CART[i].price=v===''?'':+v; $('#a'+i).textContent=inr(CART[i].price===''?'':CART[i].qty*CART[i].price);
+  $('#tot').textContent=inr(CART.reduce((a,r)=>a+(r.price===''?0:r.qty*r.price),0))||'₹0'; saveCart(); });
+$('#tbl').addEventListener('change',()=>render());
+$('#tbl').addEventListener('click',e=>{ const i=e.target.dataset.rm; if(i==null) return; CART.splice(+i,1); saveCart(); render(); });
+let clrArm=false; $('#clr').onclick=()=>{ if(!clrArm){ clrArm=true; $('#clr').textContent='Sure? Click again'; setTimeout(()=>{clrArm=false;$('#clr').textContent='Clear list'},4000); return; } clrArm=false; $('#clr').textContent='Clear list'; CART=[]; saveCart(); render(); };
+$('#dl').onclick=()=>{ if(!CART.length) return; const order=[...CART].sort((a,b)=>a.lab.localeCompare(b.lab));
+  const head=[['Lab Quotation (approx. market rates incl. GST) - '+new Date().toLocaleDateString('en-IN')],[],['S.No','Lab / group','Item','Qty','Unit','Unit price (Rs)','Amount (Rs)','Photo link']];
+  const body=order.map((r,i)=>[i+1,r.lab,r.item,r.qty,r.unit,r.price,'',photo(r.photo)]); const n=body.length;
+  const ws=XLSX.utils.aoa_to_sheet([...head,...body,[],['','','','','','Grand total',''],[],['Disclaimer: Approximate Indian market rates for budget planning only, not a vendor quotation. Please cross-check before any final decision.']]);
+  for(let i=0;i<n;i++) ws['G'+(4+i)]={t:'n',f:`IF(F${4+i}="","",D${4+i}*F${4+i})`}; ws['G'+(5+n)]={t:'n',f:`SUM(G4:G${3+n})`};
+  ws['!cols']=[{wch:6},{wch:34},{wch:40},{wch:7},{wch:8},{wch:14},{wch:14},{wch:50}];
+  const sum={}; order.forEach(r=>{sum[r.lab]=sum[r.lab]||[0,0,0];sum[r.lab][0]++;if(r.price==='')sum[r.lab][1]++;else sum[r.lab][2]+=r.qty*r.price});
+  const ws2=XLSX.utils.aoa_to_sheet([['Lab-wise summary'],[],['Lab / group','Items','Without price','Amount (Rs)'],...Object.entries(sum).map(([k,v])=>[k,v[0],v[1],Math.round(v[2])])]); ws2['!cols']=[{wch:40},{wch:8},{wch:14},{wch:16}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Quotation');XLSX.utils.book_append_sheet(wb,ws2,'Lab-wise summary');XLSX.writeFile(wb,'Lab quotation.xlsx'); };
+render();
 </script></body></html>
