@@ -57,11 +57,15 @@ button.primary{background:var(--tone);border-color:var(--tone)}
 .drop{background:var(--tile);border-radius:10px;padding:16px}
 .note{font-size:12.5px}table{font-size:13px}.disc{font-size:12px}
 details summary{font-size:13px;color:var(--tone)}
+.role,button,.srch input,.man input,input.q,input.pp,textarea,.drop{transition:box-shadow .18s,border-color .18s,transform .18s}
+.drop{border:2px dashed color-mix(in srgb,var(--tone) 55%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--tone) 10%,transparent)}
+.role:hover,.srch input:hover,.man input:hover,input.q:hover,input.pp:hover,textarea:hover,.drop:hover,.drop.over{border-color:var(--tone);box-shadow:0 0 0 3px color-mix(in srgb,var(--tone) 14%,transparent),0 0 16px color-mix(in srgb,var(--tone) 35%,transparent)}
+button:hover{border-color:var(--tone);box-shadow:0 0 14px color-mix(in srgb,var(--tone) 45%,transparent);transform:translateY(-1px)}
 </style></head><body><div class="wrap">
-<header class="hero"><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Build a vocational lab quotation in minutes: search, pick, download.</p><div class="chips"><span>3,500+ tools with photos</span><span>173 job roles / labs</span><span>Free · no login</span></div></header>
+<header class="hero"><h1>Lab Quotation <span>&amp; BOQ Tool</span></h1><p class="sub">Build a vocational lab quotation in minutes: search, pick, download.</p><div class="chips"><span>3,500+ tools with photos</span><span>174 job roles &amp; kits (incl. Jadui Pitara)</span><span>Free · no login</span></div></header>
 
 <section class="card" data-tone="1"><h2><span class="n">1</span> Find tools</h2>
-<div class="srch"><input id="q" type="search" placeholder="Tool name, QP code or job role (e.g. multimeter, AGR/Q0101, solar)" aria-label="Search tools, QP code or job role"><button class="primary" id="qgo">Search</button></div>
+<div class="srch"><input id="q" type="search" placeholder="Tool name, QP code or job role (e.g. multimeter, AGR/Q0101, Jadui Pitara)" aria-label="Search tools, QP code or job role"><button class="primary" id="qgo">Search</button></div>
 <p class="note" id="qmsg">Loading data…</p>
 <div class="roles" id="roleRes"></div>
 <div id="itemRes"></div>
